@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Domótica Home UCODE</title>
+
+<!-- Incluimos la librería MQTT Paho para poder conectarnos al bróker -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    color:#222;
+}
+
+/*========== HEADER ==========*/
+header{
+    position:fixed;
+    top:0;
+    width:100%;
+    background:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:18px;
+    box-shadow:0 5px 15px rgba(0,0,0,.08);
+    z-index:100;
+}
+
+.logo{
+    width:180px;
+    height:60px;
+    border:3px dashed #999;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    border-radius:12px;
+    color:#666;
+    font-weight:bold;
+}
+
+/*========== CONTENIDO ==========*/
+section{
+    padding:140px 8% 80px;
+}
+
+.titulo{
+    text-align:center;
+    margin-bottom:50px;
+}
+
+.titulo h2{
+    font-size:40px;
+    margin-bottom:10px;
+}
+
+.cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:30px;
+}
+
+/*========== TARJETAS ==========*/
+.card{
+    border-radius:20px;
+    padding:30px;
+    box-shadow:0 10px 20px rgba(0,0,0,.1);
+    transition:.4s;
+}
+
+.card:hover{
+    transform:translateY(-8px);
+}
+
+.card-off{
+    background:#ffd6d6;
+    border:3px solid #e53935;
+}
+
+.card-on{
+    background:#c8ffd6;
+    border:3px solid #2ecc71;
+}
+
+.card h3{
+    font-size:28px;
+    margin-bottom:15px;
+}
+
+.card p{
+    margin-bottom:20px;
+}
+
+.estado{
+    font-size:20px;
+    font-weight:bold;
+    margin-bottom:20px;
+}
+
+/*========== BOTONES ==========*/
+.botones{
+    display:flex;
+    gap:10px;
+}
+
+.btn{
+    flex:1;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    color:white;
+    font-size:17px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:.3s;
+}
+
+.btn-verde{
+    background:#2ecc71;
+}
+
+.btn-verde:hover{
+    background:#27ae60;
+}
+
+.btn-rojo{
+    background:#e53935;
+}
+
+.btn-rojo:hover{
+    background:#c0392b;
+}
+
+/*========== FOOTER ==========*/
+footer{
+    background:#111;
+    color:white;
+    text-align:center;
+    padding:30px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="logo">
+LOGO UCODE
+</div>
+</header>
+
+<section>
+<div class="titulo">
+<h2>Control de Iluminación</h2>
+<p>Selecciona una habitación para controlar sus luces.</p>
+</div>
+
+<div class="cards">
+    <!-- Dormitorio -->
+    <div id="card1" class="card card-off">
+        <h3>🛏️ Dormitorio</h3>
+        <p>Control inteligente del dormitorio.</p>
+        <div id="estado1" class="estado" style="color:#c0392b;">💡 Apagado</div>
+        <div class="botones">
+            <button class="btn btn-verde" onclick="publicarEstado(1, 'ON')">Encender</button>
+            <button class="btn btn-rojo" onclick="publicarEstado(1, 'OFF')">Apagar</button>
+        </div>
+    </div>
+
+    <!-- Sala -->
+    <div id="card2" class="card card-off">
+        <h3>🛋️ Sala</h3>
+        <p>Control inteligente de la sala.</p>
+        <div id="estado2" class="estado" style="color:#c0392b;">💡 Apagado</div>
+        <div class="botones">
+            <button class="btn btn-verde" onclick="publicarEstado(2, 'ON')">Encender</button>
+            <button class="btn btn-rojo" onclick="publicarEstado(2, 'OFF')">Apagar</button>
+        </div>
+    </div>
+
+    <!-- Cocina -->
+    <div id="card3" class="card card-off">
+        <h3>🍽️ Cocina</h3>
+        <p>Control inteligente de la cocina.</p>
+        <div id="estado3" class="estado" style="color:#c0392b;">💡 Apagado</div>
+        <div class="botones">
+            <button class="btn btn-verde" onclick="publicarEstado(3, 'ON')">Encender</button>
+            <button class="btn btn-rojo" onclick="publicarEstado(3, 'OFF')">Apagar</button>
+        </div>
+    </div>
+</div>
+</section>
+
+<footer>
+© 2026 UCODE Domótica | Todos los derechos reservados
+</footer>
+
+<script>
+// ----- CONFIGURACIÓN DEL BRÓKER (HIVEMQ) -----
+const MQTT_HOST = "8480782464c24c108613b58dbadc0edc.s1.eu.hivemq.cloud"; 
+const MQTT_PORT = 8884; // Puerto WebSockets TLS
+const MQTT_USER = "esp32_Uz"; 
+const MQTT_PASS = "perrodino"; // <-- COLOCA TU CONTRASEÑA REAL AQUÍ
+
+// Crear una ID de cliente aleatoria para la web
+const clientId = "web_client_" + Math.random().toString(16).substr(2, 8);
+const client = new Paho.MQTT.Client(MQTT_HOST, MQTT_PORT, clientId);
+
+// Configuramos las respuestas del cliente
+client.onConnectionLost = onConnectionLost;
+client.onMessageArrived = onMessageArrived;
+
+// Opciones de conexión segura obligatorias para HiveMQ Cloud
+const options = {
+    useSSL: true,
+    userName: MQTT_USER,
+    password: MQTT_PASS,
+    onSuccess: onConnect,
+    onFailure: onFailure
+};
+
+// Conectar al bróker
+client.connect(options);
+
+function onConnect() {
+    console.log("¡Web conectada exitosamente a HiveMQ!");
+    // Nos suscribimos a los focos por si el ESP32 cambia el estado, la web se entere
+    client.subscribe("casa/foco1");
+    client.subscribe("casa/foco2");
+    client.subscribe("casa/foco3");
+}
+
+function onFailure(message) {
+    console.log("Error de conexión: " + message.errorMessage);
+}
+
+function onConnectionLost(responseObject) {
+    if (responseObject.errorCode !== 0) {
+        console.log("Conexión perdida: " + responseObject.errorMessage);
+    }
+}
+
+// Esta función se ejecuta cuando la web recibe una actualización de estado
+function onMessageArrived(message) {
+    console.log("Mensaje recibido: " + message.destinationName + " -> " + message.payloadString);
+    
+    let num;
+    if (message.destinationName === "casa/foco1") num = 1;
+    else if (message.destinationName === "casa/foco2") num = 2;
+    else if (message.destinationName === "casa/foco3") num = 3;
+
+    if (num) {
+        actualizarInterfaz(num, message.payloadString);
+    }
+}
+
+// Envía la orden (ON / OFF) al bróker MQTT
+function publicarEstado(num, estado) {
+    if (!client.isConnected()) {
+        alert("La página no está conectada al bróker MQTT.");
+        return;
+    }
+    const message = new Paho.Message(estado);
+    message.destinationName = "casa/foco" + num;
+    message.retained = true; // Retained para que si el ESP32 se reinicia, recuerde el último estado
+    client.send(message);
+}
+
+// Cambia los colores y textos visualmente en la pantalla
+function actualizarInterfaz(num, estado) {
+    const card = document.getElementById("card" + num);
+    const textoEstado = document.getElementById("estado" + num);
+
+    if (estado === "ON") {
+        card.classList.remove("card-off");
+        card.classList.add("card-on");
+        textoEstado.innerHTML = "💡 Encendido";
+        textoEstado.style.color = "#27ae60";
+    } else {
+        card.classList.remove("card-on");
+        card.classList.add("card-off");
+        textoEstado.innerHTML = "💡 Apagado";
+        textoEstado.style.color = "#c0392b";
+    }
+}
+</script>
+
+</body>
+</html>

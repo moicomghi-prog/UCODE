@@ -268,7 +268,7 @@ function publicarEstado(num, estado) {
         alert("La página no está conectada al bróker MQTT.");
         return;
     }
-    const message = new Paho.Message(estado);
+    const message = new Paho.MQTT.Message(estado);
     message.destinationName = "casa/foco" + num;
     message.retained = true; // Retained para que si el ESP32 se reinicia, recuerde el último estado
     client.send(message);

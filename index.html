@@ -196,6 +196,16 @@ LOGO UCODE
             <button class="btn btn-rojo" onclick="publicarEstado(3, 'OFF')">Apagar</button>
         </div>
     </div>
+    <!-- Baño -->
+    <div id="card4" class="card card-off">
+        <h3>🚿 Baño</h3>
+        <p>Control inteligente del baño.</p>
+        <div id="estado4" class="estado" style="color:#c0392b;">💡 Apagado</div>
+        <div class="botones">
+          <button class="btn btn-verde" onclick="publicarEstado(4, 'ON')">Encender</button>
+          <button class="btn btn-rojo" onclick="publicarEstado(4, 'OFF')">Apagar</button>
+    </div>
+   </div>
 </div>
 </section>
 
@@ -236,6 +246,7 @@ function onConnect() {
     client.subscribe("casa/foco1");
     client.subscribe("casa/foco2");
     client.subscribe("casa/foco3");
+    client.subscribe("casa/foco4");
 }
 
 function onFailure(message) {
@@ -256,6 +267,7 @@ function onMessageArrived(message) {
     if (message.destinationName === "casa/foco1") num = 1;
     else if (message.destinationName === "casa/foco2") num = 2;
     else if (message.destinationName === "casa/foco3") num = 3;
+    else if (message.destinationName === "casa/foco4") num = 4;
 
     if (num) {
         actualizarInterfaz(num, message.payloadString);
